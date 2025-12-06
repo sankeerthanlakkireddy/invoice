@@ -1,139 +1,217 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>External Invoice Generator</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Booking & Invoice Manager</title>
     <style>
-      body { padding: 40px; background-color: #f4f4f9; }
-      .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 600px; }
-      h2 { text-align: center; margin-bottom: 20px; color: #333; }
-      .loader { display: none; text-align: center; margin-top: 10px; }
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .container { margin-bottom: 40px; border: 1px solid #ccc; padding: 15px; border-radius: 5px; max-width: 900px; margin: 20px auto; }
+        h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        input[type="text"], input[type="email"], input[type="date"], button { padding: 8px; margin-top: 5px; box-sizing: border-box; }
+        input[type="text"], input[type="email"], input[type="date"] { width: 100%; }
+        button { background-color: #007BFF; color: white; border: none; cursor: pointer; margin-top: 15px; }
+        #resultsTable { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; }
+        #resultsTable th, #resultsTable td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        #resultsTable button { padding: 5px 10px; margin: 0; width: auto; background-color: #28a745; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
     </style>
-  </head>
-  <body>
+</head>
+<body>
+
+    <script>
+        const APPS_SCRIPT_URL = "YOUR_APPS_SCRIPT_WEB_APP_URL"; 
+    </script>
 
     <div class="container">
-      <h2>External Invoice Generator 🧾</h2>
-      
-      <script>
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx0FF0fyv8G6TPu7oQSc6YPxGzQpatCQXRb0fC9ylR0g-Kuuj8icN7aJ_XY-Hz_PvZMJA/exec"; 
-      </script>h
+        <h2>Submit New Booking 📥</h2>
+        <div id="submissionMessage"></div>
+        <form id="submissionForm">
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" required>
 
-      <form id="invoiceForm">
+            <label for="phone">Phone:</label>
+            <input type="text" id="phone" name="phone" required>
+
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+
+            <label for="bookedDate">Date of Booked:</label>
+            <input type="date" id="bookedDate" name="bookedDate" required>
+
+            <button type="submit">Submit Data</button>
+        </form>
+    </div>
+
+    <div class="container">
+        <h2>Retrieve Data & Action Invoices 📅</h2>
+        <div id="retrievalMessage"></div>
+        <form id="retrievalForm">
+            <label for="searchDate">Search Bookings by Date:</label>
+            <input type="date" id="searchDate" name="searchDate" required>
+            
+            <button type="submit">Retrieve Data</button>
+        </form>
         
-        <div class="form-group">
-          <label>Customer Name</label>
-          <input type="text" class="form-control" name="customerName" required>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group col-md-6">
-            <label>Phone Number</label>
-            <input type="tel" class="form-control" name="phoneNumber" required>
-          </div>
-          <div class="form-group col-md-6">
-            <label>Email Address</label>
-            <input type="email" class="form-control" name="customerEmail" required>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group col-md-6">
-            <label>Date of Booking</label>
-            <input type="date" class="form-control" name="bookingDate" required>
-          </div>
-          <div class="form-group col-md-6">
-            <label>Amount ($)</label>
-            <input type="number" step="0.01" class="form-control" name="amount" required>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Payment Status</label>
-          <select class="form-control" name="paymentStatus" id="statusSelect" onchange="toggleButtonText()">
-            <option value="Pending">Pending / Unpaid</option>
-            <option value="Paid">Paid</option>
-          </select>
-          <small class="text-muted">Invoice is emailed only if status is "Paid".</small>
-        </div>
-
-        <button type="submit" class="btn btn-primary btn-block" id="submitBtn">Save Data</button>
-        
-        <div class="loader" id="loader">
-           <div class="spinner-border text-primary" role="status"></div>
-           <p>Processing...</p>
-        </div>
-      </form>
+        <h3>Search Results:</h3>
+        <table id="resultsTable">
+            <thead>
+                <tr>
+                    <th>Invoice ID</th> 
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Action</th> 
+                </tr>
+            </thead>
+            <tbody id="resultsBody">
+                </tbody>
+        </table>
     </div>
 
     <script>
-      // Attach the submission handler to the form
-      document.getElementById('invoiceForm').addEventListener('submit', handleFormSubmit);
+        const submissionForm = document.getElementById('submissionForm');
+        const retrievalForm = document.getElementById('retrievalForm');
+        const resultsBody = document.getElementById('resultsBody');
+        const subMsg = document.getElementById('submissionMessage');
+        const retMsg = document.getElementById('retrievalMessage');
 
-      function toggleButtonText() {
-        var status = document.getElementById("statusSelect").value;
-        var btn = document.getElementById("submitBtn");
-        if(status === "Paid") {
-          btn.innerHTML = "Save & Send Invoice";
-          btn.classList.remove("btn-primary");
-          btn.classList.add("btn-success");
-        } else {
-          btn.innerHTML = "Save Data Only";
-          btn.classList.remove("btn-success");
-          btn.classList.add("btn-primary");
+        // --- SUBMISSION LOGIC (POST Request) ---
+        submissionForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            subMsg.className = '';
+            subMsg.textContent = 'Submitting...';
+
+            const formData = new URLSearchParams(new FormData(submissionForm));
+            formData.append('action', 'submitBooking'); // New action parameter for Apps Script
+
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    subMsg.className = 'success';
+                    subMsg.textContent = result.message + " Check your Google Sheet!";
+                    submissionForm.reset(); 
+                } else {
+                    subMsg.className = 'error';
+                    subMsg.textContent = 'Submission Failed: ' + result.message;
+                }
+            } catch (error) {
+                subMsg.className = 'error';
+                subMsg.textContent = 'An error occurred during submission.';
+            }
+        });
+
+        // --- RETRIEVAL LOGIC (GET Request) ---
+        retrievalForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            resultsBody.innerHTML = ''; 
+            retMsg.className = '';
+            retMsg.textContent = 'Searching...';
+
+            const searchDate = document.getElementById('searchDate').value;
+            const fullUrl = APPS_SCRIPT_URL + '?searchDate=' + searchDate;
+
+            try {
+                const response = await fetch(fullUrl, { method: 'GET' });
+                const result = await response.json();
+
+                if (result.success) {
+                    retMsg.className = 'success';
+                    retMsg.textContent = `Found ${result.data.length} booking(s) for ${searchDate}.`;
+                    
+                    if (result.data.length > 0) {
+                        result.data.forEach(booking => {
+                            const row = resultsBody.insertRow();
+                            
+                            // Ensure these keys match the headers in your Google Sheet!
+                            const invoiceId = booking['Invoice ID'] || 'N/A';
+                            const status = booking['Status'] || 'Pending';
+                            const amount = booking['Amount'] || '0.00';
+                            
+                            row.insertCell().textContent = invoiceId;
+                            row.insertCell().textContent = booking['Name'];
+                            row.insertCell().textContent = booking['Email'];
+                            row.insertCell().textContent = `$${amount}`;
+                            row.insertCell().textContent = status;
+                            
+                            // Create the Action Button Column
+                            const actionCell = row.insertCell();
+                            
+                            if (status.toLowerCase() === 'paid') {
+                                actionCell.textContent = 'Email Sent ✅';
+                                actionCell.style.color = 'green';
+                            } else {
+                                const button = document.createElement('button');
+                                button.textContent = 'Mark Paid & Send';
+                                button.onclick = () => sendInvoiceEmail(invoiceId, status);
+                                actionCell.appendChild(button);
+                            }
+                        });
+                    }
+                } else {
+                    retMsg.className = 'error';
+                    retMsg.textContent = 'Retrieval Failed: ' + result.message;
+                }
+            } catch (error) {
+                retMsg.className = 'error';
+                retMsg.textContent = 'Network Error: Could not retrieve data.';
+            }
+        });
+
+
+        // --- Function to handle the Invoice update and trigger email ---
+        async function sendInvoiceEmail(invoiceId, currentStatus) {
+            if (currentStatus.toLowerCase() === 'paid') {
+                alert(`Invoice #${invoiceId} is already marked as Paid.`);
+                return;
+            }
+
+            const confirmation = confirm(`Mark Invoice #${invoiceId} as PAID and send confirmation?`);
+            
+            if (!confirmation) {
+                return;
+            }
+
+            const retMsg = document.getElementById('retrievalMessage');
+            retMsg.className = '';
+            retMsg.textContent = `Processing Invoice #${invoiceId}...`;
+
+            const payload = new URLSearchParams();
+            payload.append('action', 'sendInvoice'); // Matches action check in Apps Script doPost
+            payload.append('invoiceId', invoiceId);
+            payload.append('status', 'Paid'); // The status we want to set
+
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    body: payload
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    retMsg.className = 'success';
+                    retMsg.textContent = result.message;
+                    // Force a re-search to refresh the status in the table
+                    document.getElementById('retrievalForm').dispatchEvent(new Event('submit'));
+                } else {
+                    retMsg.className = 'error';
+                    retMsg.textContent = 'Action Failed: ' + result.message;
+                }
+
+            } catch (error) {
+                retMsg.className = 'error';
+                retMsg.textContent = 'Network Error: Could not reach the server.';
+            }
         }
-      }
-      
-      async function handleFormSubmit(event) {
-        event.preventDefault(); // Stop the standard form submission
-        
-        if (APPS_SCRIPT_URL.includes("YOUR_NEW_DEPLOYMENT_URL_HERE")) {
-          alert("ERROR: Please update the APPS_SCRIPT_URL in the HTML file with your deployed script URL.");
-          return;
-        }
-
-        document.getElementById("submitBtn").disabled = true;
-        document.getElementById("loader").style.display = "block";
-
-        const form = event.target;
-        const formData = new FormData(form);
-        
-        // Convert form data to a plain JavaScript object
-        const data = Object.fromEntries(formData.entries());
-
-        try {
-            await fetch(APPS_SCRIPT_URL, {
-                method: 'POST',
-                // Use 'no-cors' for simple external submissions to bypass complex preflight checks
-                mode: 'no-cors', 
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data)
-            });
-
-            // Since we use 'no-cors', we can't read the server's message, 
-            // so we show a general success alert.
-            onSuccess("Success: Data request sent. Check your sheet for Invoice ID!");
-
-        } catch (error) {
-            onFailure(error);
-        }
-      }
-
-      function onSuccess(msg) {
-        document.getElementById("invoiceForm").reset();
-        document.getElementById("loader").style.display = "none";
-        document.getElementById("submitBtn").disabled = false;
-        toggleButtonText(); // Reset button style
-        alert(msg);
-      }
-
-      function onFailure(error) {
-        document.getElementById("loader").style.display = "none";
-        document.getElementById("submitBtn").disabled = false;
-        alert("Error: Failed to communicate with the Apps Script server. Check the URL and deployment: " + error);
-      }
     </script>
-  </body>
+</body>
 </html>
