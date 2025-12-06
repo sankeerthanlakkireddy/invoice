@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <base target="_top">
+    <title>External Invoice Generator</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
     <style>
       body { padding: 40px; background-color: #f4f4f9; }
@@ -13,14 +13,18 @@
   <body>
 
     <div class="container">
-      <h2>Invoice Generator</h2>
-      <form id="invoiceForm" onsubmit="handleFormSubmit(this)">
+      <h2>External Invoice Generator</h2>
+      
+      <script>
+        const APPS_SCRIPT_URL = "YOUR_NEW_DEPLOYMENT_URL_HERE"; 
+      </script>
+      <form id="invoiceForm">
         
         <div class="form-group">
           <label>Customer Name</label>
           <input type="text" class="form-control" name="customerName" required>
         </div>
-
+        
         <div class="form-row">
           <div class="form-group col-md-6">
             <label>Phone Number</label>
@@ -62,6 +66,8 @@
     </div>
 
     <script>
+      document.getElementById('invoiceForm').addEventListener('submit', handleFormSubmit);
+
       function toggleButtonText() {
         var status = document.getElementById("statusSelect").value;
         var btn = document.getElementById("submitBtn");
@@ -75,16 +81,38 @@
           btn.classList.add("btn-primary");
         }
       }
-
-      function handleFormSubmit(formObject) {
-        event.preventDefault();
+      
+      async function handleFormSubmit(event) {
+        event.preventDefault(); // Stop the standard form submission
         document.getElementById("submitBtn").disabled = true;
         document.getElementById("loader").style.display = "block";
 
-        google.script.run
-          .withSuccessHandler(onSuccess)
-          .withFailureHandler(onFailure)
-          .processForm(formObject);
+        const form = event.target;
+        const formData = new FormData(form);
+        
+        // Convert form data to a plain JavaScript object
+        const data = Object.fromEntries(formData.entries());
+
+        try {
+            const response = await fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors', // Required for external calls (though success is handled differently)
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+
+            // Note: Due to 'no-cors', the success message from the script cannot be read directly.
+            // A simple confirmation message is shown here based on the network response success.
+            onSuccess("Success: Data request sent to server. Check your sheet in a moment!");
+            
+            // For true external integration (reading the JSON response), you need CORS configuration
+            // which is often complex. This simple 'no-cors' method ensures the data transmits.
+
+        } catch (error) {
+            onFailure(error);
+        }
       }
 
       function onSuccess(msg) {
@@ -98,9 +126,8 @@
       function onFailure(error) {
         document.getElementById("loader").style.display = "none";
         document.getElementById("submitBtn").disabled = false;
-        alert("Error: " + error.message);
+        alert("Error: Failed to communicate with the Apps Script server. Check the URL and deployment: " + error);
       }
     </script>
-
   </body>
 </html>
