@@ -19,7 +19,7 @@
 <body>
 
     <script>
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwUA6ssAJeynfpIe8bbKFKIF6T-yRqV4BGnBxPGxiZfXkn1Mzuhy01fmND_Q9EN8MyB/exec"; 
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxsf4LfjsBwjyM6eSa41TvXU6gJ5TdVB5uSuPlXRpAHpYOKHaE1HoR78J3XRRkdFOdW/exec"; 
     </script>
 
     <div class="container">
@@ -36,11 +36,11 @@
             <label for="phone">Client Phone:</label>
             <input type="text" id="phone" name="phone" required>
 
-            <label for="service">Service/Item Billed:</label>
-            <input type="text" id="service" name="service" required>
+            <label for="service">Main Service Description:</label>
+            <input type="text" id="service" name="service" value="Dead Animal removal" required>
 
             <label for="amount">Amount ($):</label>
-            <input type="number" id="amount" name="amount" step="0.01" required>
+            <input type="number" id="amount" name="amount" step="0.01" value="250.00" required>
             
             <label for="dateCreated">Date Created:</label>
             <input type="date" id="dateCreated" name="dateCreated" required>
@@ -67,7 +67,7 @@
             subMsg.textContent = 'Processing Invoice...';
 
             const formData = new URLSearchParams(new FormData(invoiceForm));
-            
+
             try {
                 const response = await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
