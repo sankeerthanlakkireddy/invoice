@@ -58,12 +58,7 @@
             <label for="dateCreated">Date Created:</label>
             <input type="date" id="dateCreated" name="dateCreated" required>
 
-            <label for="status">Payment Status:</label>
-            <select id="status" name="status" required>
-                <option value="Pending">Pending</option>
-                <option value="Paid">Paid (Send PDF Email)</option>
-                <option value="Cancelled">Cancelled</option>
-            </select>
+
             
             <hr>
 
@@ -92,6 +87,12 @@
             </div>
 
             <input type="hidden" id="servicesJson" name="servicesJson">
+            <label for="status">Payment Status:</label>
+            <select id="status" name="status" required>
+                <option value="Pending">Pending</option>
+                <option value="Paid">Paid (Send PDF Email)</option>
+                <option value="Cancelled">Cancelled</option>
+            </select>
 
             <button type="submit">Create Invoice & Send Email</button>
         </form>
