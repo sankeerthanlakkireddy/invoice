@@ -13,18 +13,19 @@
   <body>
 
     <div class="container">
-      <h2>External Invoice Generator</h2>
+      <h2>External Invoice Generator 🧾</h2>
       
       <script>
-        const APPS_SCRIPT_URL = "Yhttps://script.google.com/macros/s/AKfycbzpuTmJFndKskMeJ510Edq1ulSoJ6SrotUodCSUIhCq_OalwKka_tGuiupub2YUTJB6PA/exec"; 
+        const APPS_SCRIPT_URL = "YOUR_NEW_DEPLOYMENT_URL_HERE"; 
       </script>
+
       <form id="invoiceForm">
         
         <div class="form-group">
           <label>Customer Name</label>
           <input type="text" class="form-control" name="customerName" required>
         </div>
-        
+
         <div class="form-row">
           <div class="form-group col-md-6">
             <label>Phone Number</label>
@@ -43,7 +44,7 @@
           </div>
           <div class="form-group col-md-6">
             <label>Amount ($)</label>
-            <input type="number" class="form-control" name="amount" required>
+            <input type="number" step="0.01" class="form-control" name="amount" required>
           </div>
         </div>
 
@@ -66,6 +67,7 @@
     </div>
 
     <script>
+      // Attach the submission handler to the form
       document.getElementById('invoiceForm').addEventListener('submit', handleFormSubmit);
 
       function toggleButtonText() {
@@ -84,6 +86,12 @@
       
       async function handleFormSubmit(event) {
         event.preventDefault(); // Stop the standard form submission
+        
+        if (APPS_SCRIPT_URL.includes("YOUR_NEW_DEPLOYMENT_URL_HERE")) {
+          alert("ERROR: Please update the APPS_SCRIPT_URL in the HTML file with your deployed script URL.");
+          return;
+        }
+
         document.getElementById("submitBtn").disabled = true;
         document.getElementById("loader").style.display = "block";
 
@@ -94,21 +102,19 @@
         const data = Object.fromEntries(formData.entries());
 
         try {
-            const response = await fetch(APPS_SCRIPT_URL, {
+            await fetch(APPS_SCRIPT_URL, {
                 method: 'POST',
-                mode: 'no-cors', // Required for external calls (though success is handled differently)
+                // Use 'no-cors' for simple external submissions to bypass complex preflight checks
+                mode: 'no-cors', 
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(data)
             });
 
-            // Note: Due to 'no-cors', the success message from the script cannot be read directly.
-            // A simple confirmation message is shown here based on the network response success.
-            onSuccess("Success: Data request sent to server. Check your sheet in a moment!");
-            
-            // For true external integration (reading the JSON response), you need CORS configuration
-            // which is often complex. This simple 'no-cors' method ensures the data transmits.
+            // Since we use 'no-cors', we can't read the server's message, 
+            // so we show a general success alert.
+            onSuccess("Success: Data request sent. Check your sheet for Invoice ID!");
 
         } catch (error) {
             onFailure(error);
