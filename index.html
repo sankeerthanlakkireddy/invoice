@@ -45,24 +45,32 @@
         <h2>Generate New Invoice 📝</h2>
         <div id="submissionMessage" class="message"></div>
         
-        <form id="invoiceForm">
+<form id="invoiceForm">
+    <div class="form-row">
+        <div>
             <label for="name">Client Name:</label>
             <input type="text" id="name" name="name" required>
-
+        </div>
+        <div>
             <label for="email">Client Email:</label>
             <input type="email" id="email" name="email" required>
+        </div>
+    </div>
 
+    <div class="form-row">
+        <div>
             <label for="phone">Client Phone:</label>
             <input type="text" id="phone" name="phone" required>
-
+        </div>
+        <div>
             <label for="dateCreated">Date Created:</label>
             <input type="date" id="dateCreated" name="dateCreated" required>
+        </div>
+    </div>
 
-
-            
-            <hr>
-
-            <h3>Add Services</h3>
+    <hr>
+    
+    <h3>Add Services</h3>
             <div class="service-input-group">
                 <div style="flex-grow: 3;">
                     <label for="serviceName" style="margin-top:0;">Description</label>
