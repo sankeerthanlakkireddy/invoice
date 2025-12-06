@@ -5,7 +5,7 @@
     <title>Invoice Generation</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; }
-        .container { border: 1px solid #ccc; padding: 20px; border-radius: 5px; max-width: 500px; margin: 20px auto; }
+        .container { border: 1px solid #ccc; padding: 20px; border-radius: 5px; max-width: 700px; margin: 20px auto; }
         h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; }
         label { display: block; margin-top: 10px; font-weight: bold; }
         input[type="text"], input[type="email"], input[type="number"], input[type="date"], select, button { padding: 10px; margin-top: 5px; width: 100%; box-sizing: border-box; }
@@ -14,12 +14,31 @@
         .message { margin-top: 15px; padding: 10px; border-radius: 4px; display: none; }
         .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+        /* Multi-Service Styling */
+        .service-input-group { 
+            display: flex; 
+            gap: 10px; 
+            margin-bottom: 10px; 
+            align-items: flex-end;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .service-input-group > div { flex-grow: 1; }
+        .service-input-group input { margin: 0; }
+        .service-list { margin-top: 15px; border-top: 2px solid #007BFF; padding-top: 10px; }
+        .service-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #eee; font-size: 0.9em; }
+        .service-item button { width: 30px; margin: 0; padding: 5px; background-color: #dc3545; }
+        .total-display { font-size: 1.2em; font-weight: bold; margin-top: 15px; text-align: right; }
+        .add-btn { background-color: #007BFF; width: 150px; }
     </style>
 </head>
 <body>
 
     <script>
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyvVvNruHR7BIWATJ9NqpstvPkNyVD3Pp3VxoDipJG2BXA_ERuHTVwOMDrclIeIiUT8/exec"; 
+        const APPS_SCRIPT_URL = "YOUR_APPS_SCRIPT_WEB_APP_URL"; 
+        let services = []; // Global array to hold service items
     </script>
 
     <div class="container">
@@ -36,12 +55,6 @@
             <label for="phone">Client Phone:</label>
             <input type="text" id="phone" name="phone" required>
 
-            <label for="service">Main Service Description:</label>
-            <input type="text" id="service" name="service" required>
-
-            <label for="amount">Amount ($):</label>
-            <input type="number" id="amount" name="amount"required>
-            
             <label for="dateCreated">Date Created:</label>
             <input type="date" id="dateCreated" name="dateCreated" required>
 
@@ -51,21 +64,117 @@
                 <option value="Paid">Paid (Send PDF Email)</option>
                 <option value="Cancelled">Cancelled</option>
             </select>
+            
+            <hr>
+
+            <h3>Add Services</h3>
+            <div class="service-input-group">
+                <div style="flex-grow: 3;">
+                    <label for="serviceName" style="margin-top:0;">Description</label>
+                    <input type="text" id="serviceName" placeholder="Service Name" style="width: 100%;" />
+                </div>
+                <div>
+                    <label for="serviceQty" style="margin-top:0;">Qty</label>
+                    <input type="number" id="serviceQty" value="1" min="1" style="width: 100%;" />
+                </div>
+                <div>
+                    <label for="servicePrice" style="margin-top:0;">Price ($)</label>
+                    <input type="number" id="servicePrice" step="0.01" placeholder="0.00" style="width: 100%;" />
+                </div>
+                <button type="button" class="add-btn" onclick="addService()">Add</button>
+            </div>
+
+            <div class="service-list">
+                <h4>Invoice Items:</h4>
+                <div id="serviceDisplay">
+                    </div>
+                <div class="total-display" id="totalDisplay">Total: $0.00</div>
+            </div>
+
+            <input type="hidden" id="servicesJson" name="servicesJson">
 
             <button type="submit">Create Invoice & Send Email</button>
         </form>
     </div>
 
     <script>
+        const serviceDisplay = document.getElementById('serviceDisplay');
+        const totalDisplay = document.getElementById('totalDisplay');
+
+        function calculateTotal() {
+            const total = services.reduce((sum, item) => sum + (item.quantity * item.amount), 0);
+            totalDisplay.textContent = `Total: $${total.toFixed(2)}`;
+            return total.toFixed(2);
+        }
+
+        function renderServices() {
+            serviceDisplay.innerHTML = '';
+            services.forEach((item, index) => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'service-item';
+                
+                const lineTotal = (item.quantity * item.amount).toFixed(2);
+
+                itemElement.innerHTML = `
+                    <span style="flex-grow: 1;">${index + 1}. ${item.name} (${item.quantity} x $${item.amount.toFixed(2)})</span>
+                    <span style="font-weight: bold;">$${lineTotal}</span>
+                    <button type="button" onclick="removeService(${index})">X</button>
+                `;
+                serviceDisplay.appendChild(itemElement);
+            });
+            calculateTotal();
+        }
+
+        function addService() {
+            const name = document.getElementById('serviceName').value.trim();
+            const qty = parseInt(document.getElementById('serviceQty').value);
+            const price = parseFloat(document.getElementById('servicePrice').value);
+
+            if (!name || isNaN(qty) || qty <= 0 || isNaN(price) || price < 0) {
+                alert('Please enter a valid name, quantity, and price.');
+                return;
+            }
+
+            services.push({
+                name: name,
+                quantity: qty,
+                amount: price,
+            });
+
+            // Clear inputs
+            document.getElementById('serviceName').value = '';
+            document.getElementById('serviceQty').value = '1';
+            document.getElementById('servicePrice').value = '';
+
+            renderServices();
+        }
+
+        function removeService(index) {
+            services.splice(index, 1);
+            renderServices();
+        }
+
+        // --- Submission Logic ---
         const invoiceForm = document.getElementById('invoiceForm');
         const subMsg = document.getElementById('submissionMessage');
+        const servicesJsonInput = document.getElementById('servicesJson');
 
         invoiceForm.addEventListener('submit', async function(e) {
             e.preventDefault();
+
+            if (services.length === 0) {
+                alert('The invoice must contain at least one service item.');
+                return;
+            }
+
             subMsg.style.display = 'block';
             subMsg.className = 'message';
             subMsg.textContent = 'Processing Invoice...';
+            
+            // Step 1: Serialize the service array into the hidden field
+            servicesJsonInput.value = JSON.stringify(services);
 
+            // Step 2: Build the complete FormData object
             const formData = new URLSearchParams(new FormData(invoiceForm));
 
             try {
@@ -80,6 +189,8 @@
                     subMsg.className = 'message success';
                     subMsg.textContent = result.message;
                     invoiceForm.reset(); 
+                    services = []; // Clear local array
+                    renderServices(); // Update display
                 } else {
                     subMsg.className = 'message error';
                     subMsg.textContent = 'Invoice Creation Failed: ' + result.message;
