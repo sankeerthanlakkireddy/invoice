@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+    <style>
+      body { padding: 40px; background-color: #f4f4f9; }
+      .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 600px; }
+      h2 { text-align: center; margin-bottom: 20px; color: #333; }
+      .loader { display: none; text-align: center; margin-top: 10px; }
+    </style>
+  </head>
+  <body>
+
+    <div class="container">
+      <h2>Invoice Generator</h2>
+      <form id="invoiceForm" onsubmit="handleFormSubmit(this)">
+        
+        <div class="form-group">
+          <label>Customer Name</label>
+          <input type="text" class="form-control" name="customerName" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-md-6">
+            <label>Phone Number</label>
+            <input type="tel" class="form-control" name="phoneNumber" required>
+          </div>
+          <div class="form-group col-md-6">
+            <label>Email Address</label>
+            <input type="email" class="form-control" name="customerEmail" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-md-6">
+            <label>Date of Booking</label>
+            <input type="date" class="form-control" name="bookingDate" required>
+          </div>
+          <div class="form-group col-md-6">
+            <label>Amount ($)</label>
+            <input type="number" class="form-control" name="amount" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Payment Status</label>
+          <select class="form-control" name="paymentStatus" id="statusSelect" onchange="toggleButtonText()">
+            <option value="Pending">Pending / Unpaid</option>
+            <option value="Paid">Paid</option>
+          </select>
+          <small class="text-muted">Invoice is emailed only if status is "Paid".</small>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" id="submitBtn">Save Data</button>
+        
+        <div class="loader" id="loader">
+           <div class="spinner-border text-primary" role="status"></div>
+           <p>Processing...</p>
+        </div>
+      </form>
+    </div>
+
+    <script>
+      function toggleButtonText() {
+        var status = document.getElementById("statusSelect").value;
+        var btn = document.getElementById("submitBtn");
+        if(status === "Paid") {
+          btn.innerHTML = "Save & Send Invoice";
+          btn.classList.remove("btn-primary");
+          btn.classList.add("btn-success");
+        } else {
+          btn.innerHTML = "Save Data Only";
+          btn.classList.remove("btn-success");
+          btn.classList.add("btn-primary");
+        }
+      }
+
+      function handleFormSubmit(formObject) {
+        event.preventDefault();
+        document.getElementById("submitBtn").disabled = true;
+        document.getElementById("loader").style.display = "block";
+
+        google.script.run
+          .withSuccessHandler(onSuccess)
+          .withFailureHandler(onFailure)
+          .processForm(formObject);
+      }
+
+      function onSuccess(msg) {
+        document.getElementById("invoiceForm").reset();
+        document.getElementById("loader").style.display = "none";
+        document.getElementById("submitBtn").disabled = false;
+        toggleButtonText(); // Reset button style
+        alert(msg);
+      }
+
+      function onFailure(error) {
+        document.getElementById("loader").style.display = "none";
+        document.getElementById("submitBtn").disabled = false;
+        alert("Error: " + error.message);
+      }
+    </script>
+
+  </body>
+</html>
